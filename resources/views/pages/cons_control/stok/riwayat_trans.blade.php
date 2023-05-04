@@ -10,35 +10,50 @@
 
 @section('content')
 
-<div class="col-md-6 col-lg-4">
-    <br>
-    @if ($message = Session::get('sukses'))
-    <div class="alert alert-alt alert-success alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        Success, <a class="alert-link" href="javascript:void(0)">{{ $message }}</a>.
-    </div>
+<div class="col-12">
+    <div class="card">
+        <div class="card-body">
+          <p>Export Report</p>
+          <form id="export-by-item" class="form-inline">
 
-    @endif
-
-    @if ($message = Session::get('gagal'))
-    <div class="alert alert-alt alert-danger alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        <a class="alert-link" href="javascript:void(0)">{{ $message }}</a>.
+              @csrf
+              @method('POST')
+              <div class="form-group mb-2">
+                  <label for="">Type :&nbsp;</label>
+                  <select name="type" id="type_filter" class="form-control form-control-sm">
+                      <option value="" selected disabled></option>
+                      <option value="stin">Stock In</option>
+                      <option value="stout">Stock Out</option>
+                  </select>
+              </div>
+              <div class="form-group mx-sm-3 mb-2">
+                  <label for="">Item Name :&nbsp;</label>
+                  <select name="item_name" id="item_name_filter" class="form-control form-control-sm">
+                      <option value="" selected>All</option>
+                      @foreach($stok as $st)
+                          <option value="{{ $st->barang_name}}">{{ $st->barang_name}}</option>
+                      @endforeach
+                  </select>
+              </div>
+              <div class="form-group mx-sm-3 mb-2">
+                  <label for="">Start Date :&nbsp;</label>
+                  <input type="date" name="start" class="form-control form-control-sm" id="start-date">
+              </div>
+              <div class="form-group mx-sm-3 mb-2">
+                  <label for="">End Date : &nbsp;</label>
+                  <input type="date" name="end" class="form-control form-control-sm" id="end-date" >
+              </div>
+              <div class="form-group mx-sm-3 mb-2">
+                  <label for="">Export To&nbsp;</label>
+                  <select name="export_type" id="export_type" class="form-control form-control-sm">
+                      <option value="pdf" selected>PDF</option>
+                      {{-- <option value="excel">Excel</option> --}}
+                  </select>
+              </div>
+              <button type="submit" class="btn btn-sm btn-primary mb-2 exportData"><i class="fa fa-save"></i> Export</button>
+          </form>
+        </div>
     </div>
-    @endif
-
-    @if ($message = Session::get('peringatan'))
-    <div class="alert alert-alt alert-warning alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
-        Ups, <a class="alert-link" href="javascript:void(0)">{{ $message }}</a>.
-    </div>
-    @endif
 </div>
 
 <div class="col-12">
@@ -177,6 +192,24 @@
     //         location.reload();
     //     }, 10000);
     // })
+    $('#export-by-item').submit(function(event) {
+            // alert('ss');
+            event.preventDefault();
+            var formData = $(this).serialize();
+            $.ajax({
+                url: '{{route('stok.filter_data_item') }}?' + formData,
+                type: 'GET',
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(response) {
+                    var file = new Blob([response], {type: 'application/pdf'});
+                    var fileURL = URL.createObjectURL(file);
+                    window.open(fileURL);
+                }
+            });
+        });
+    
 
 
 </script>

@@ -13,6 +13,7 @@ use Session;
 use DataTables;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use PDF;
 
 class StokController extends Controller
 {
@@ -75,12 +76,14 @@ class StokController extends Controller
         // ->orderBy('id', 'desc')
         // ->get();
 
+        $stok = Barang_stok::all();
+
         $stok_in = DB::table('stok_in')->get();
 
         if ($request->ajax()) {
             return datatables()->of($stok_in)->make(true);
         }
-        return view('pages.cons_control.stok.riwayat_trans');
+        return view('pages.cons_control.stok.riwayat_trans', compact("stok"));
     }
     public function in(Request $request)
     {
@@ -341,14 +344,95 @@ class StokController extends Controller
 
 
         // dd($permPlus);
-        // if ($getDay != 1) {
-        //     $no_perm = $concatYnM.'-'.$permPlus;
+        // if ($getDay != 02) {
+        //     // $no_perm = $concatYnM.'-'.$permPlus;
+        //     $no_perm = $concatYnM.'-'.$zeroAdd;
         // }else{
-        //     $no_perm = $concatYnM.'-'.'01';
+        //     $no_perm = $concatYnM.'-'.'001';
         // }
+        //CEK JIKA SUDAH BEDA BULAN
+
+        $getlastmonth_ = substr($lastNoPerm1,0,6);
+        $getlastmonth = substr($getlastmonth_,-2);
+        // dd($getlastmonth);
+
+        if ($getlastmonth != $getMonth) {
+            $no_perm = $concatYnM.'-'.'001';
+        }else{
+            $no_perm = $concatYnM.'-'.$zeroAdd;
+        }
 
 
-        $no_perm = $concatYnM.'-'.$zeroAdd;
+        // $no_perm = $concatYnM.'-'.$zeroAdd;
 		return response()->json($no_perm);
+    }
+    public function filter_data_item(Request $request)
+    {
+        $type = $request->type;
+
+        $item_name = $request->item_name;
+
+        if ($item_name != null) {
+            $item_name = $request->item_name;
+        }else{
+            $item_name = 'All';
+        }
+        // dd($item_name);
+
+        $start = Carbon::parse($request->input('start'))->startOfDay();
+        $end = Carbon::parse($request->input('end'))->endOfDay();
+
+        if ($type == 'stin') {
+            if ($item_name == 'All') {
+                # code...
+                $transactions = Stok_in::whereBetween('date', [$start, $end])->get();
+                $count_stin = Stok_in::whereBetween('date', [$start, $end])
+                    ->sum('jumlah');
+            }else{
+                $transactions = Stok_in::whereBetween('date', [$start, $end])->where('barang_name', '=', $item_name)->get();
+                $count_stin = Stok_in::whereBetween('date', [$start, $end])
+                    ->where('barang_name', '=', $item_name)
+                    ->sum('jumlah');
+            }
+            // dd($count_stin);
+            $pdf = PDF::loadView('pages.cons_control.stok.report.report_stin_item', [
+                'item' => $item_name,
+                'data' => $transactions,
+                'start' => $start,
+                'end' => $end,
+                'jumlah' => $count_stin,
+            ]);
+            $pdf->setPaper('A4', 'portrait');
+            return $pdf->stream();
+        }else{
+
+            if ($item_name == 'All') {
+                $transactions = Stok_out::whereBetween('date', [$start, $end])->get();
+
+                $count_stin = Stok_out::whereBetween('date', [$start, $end])
+                        ->sum('jumlah');
+            }else{
+                $transactions = Stok_out::whereBetween('date', [$start, $end])->where('barang_name', '=', $item_name)->get();
+
+                $count_stin = Stok_out::whereBetween('date', [$start, $end])
+                        ->where('barang_name', '=', $item_name)
+                        ->sum('jumlah');
+            }
+
+
+
+
+            // dd($count_stin);
+            $pdf = PDF::loadView('pages.cons_control.stok.report.report_stout_item', [
+                'item' => $item_name,
+                'data' => $transactions,
+                'start' => $start,
+                'end' => $end,
+                'jumlah' => $count_stin,
+            ]);
+            $pdf->setPaper('A4', 'portrait');
+            return $pdf->stream();
+        }
+
     }
 }

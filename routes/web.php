@@ -123,6 +123,7 @@ Route::group(['middleware' =>['auth', 'ceklevel:admin']], function(){
         Route::post('/stok/store_stin', 'StokController@storestin')->name('stok.store_stin');
         Route::post('/stok/store_stout', 'StokController@storestout')->name('stok.store_stout');
         Route::get('/stok/auto_number_perm', 'StokController@autoNumberPerm')->name('stok.auto_number_perm');
+        Route::get('/stok/filter_data_item', 'StokController@filter_data_item')->name('stok.filter_data_item');
 
     ///End Consumable Control
 
